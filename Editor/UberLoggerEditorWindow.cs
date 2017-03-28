@@ -80,6 +80,54 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
 
     }
 
+    public string ExtractLogListToString()
+    {
+        string result = "";
+        foreach (CountedLog log in RenderLogs)
+        {
+            UberLogger.LogInfo logInfo = log.Log;
+            result += logInfo.GetTimeStampAsString() + ": " + logInfo.Severity + ": " + logInfo.Message + "\n";
+        }
+        return result;
+    }
+
+    public string ExtractLogDetailsToString()
+    {
+        string result = "";
+        if (RenderLogs.Count > 0 && SelectedRenderLog >= 0)
+        {
+            var countedLog = RenderLogs[SelectedRenderLog];
+            var log = countedLog.Log;
+
+            for (int c1 = 0; c1 < log.Callstack.Count; c1++)
+            {
+                var frame = log.Callstack[c1];
+                var methodName = frame.GetFormattedMethodName();
+                result += methodName + "\n";
+            }
+        }
+        return result;
+    }
+
+    public void HandleCopyToClipboard()
+    {
+        Event e = Event.current;
+        if (e.type == EventType.KeyDown && e.character == 'C' && e.modifiers == EventModifiers.Shift)
+        {
+            // Copy to clipboard triggered
+
+            // Convert all messages to a single long string
+            string result = ExtractLogListToString();
+
+            result += "\n";
+
+            // Convert current callstack to a single long string
+            result += ExtractLogDetailsToString();
+
+            GUIUtility.systemCopyBuffer = result;
+        }
+    }
+
 
     Vector2 DrawPos;
     public void OnGUI()
@@ -131,6 +179,8 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
         DrawPos.y += DividerHeight;
 
         DrawLogDetails();
+
+        HandleCopyToClipboard();
 
         //If we're dirty, do a repaint
         Dirty = false;
