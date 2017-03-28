@@ -80,6 +80,9 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
 
     }
 
+    /// <summary>
+    /// Converts the entire message log to a multiline string
+    /// </summary>
     public string ExtractLogListToString()
     {
         string result = "";
@@ -91,6 +94,9 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
         return result;
     }
 
+    /// <summary>
+    /// Converts the currently-displayed stack to a multiline string
+    /// </summary>
     public string ExtractLogDetailsToString()
     {
         string result = "";
@@ -112,22 +118,20 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
     public void HandleCopyToClipboard()
     {
         Event e = Event.current;
+        // Shift-C triggers copy to clipboard
+        // It would be preferable to use Ctrl-C, but Unity does not pass Ctrl-C on as events
         if (e.type == EventType.KeyDown && e.character == 'C' && e.modifiers == EventModifiers.Shift)
         {
-            // Copy to clipboard triggered
-
-            // Convert all messages to a single long string
+            // Copy current message log and current stack to the clipboard
+            // It would be preferable to only copy one of the two, but that requires UberLogger to have focus handling
+            // between the message log and stack views
             string result = ExtractLogListToString();
-
             result += "\n";
-
-            // Convert current callstack to a single long string
             result += ExtractLogDetailsToString();
 
             GUIUtility.systemCopyBuffer = result;
         }
     }
-
 
     Vector2 DrawPos;
     public void OnGUI()
