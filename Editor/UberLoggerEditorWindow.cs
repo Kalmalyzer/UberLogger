@@ -89,7 +89,7 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
         foreach (CountedLog log in RenderLogs)
         {
             UberLogger.LogInfo logInfo = log.Log;
-            result += logInfo.GetTimeStampAsString() + ": " + logInfo.Severity + ": " + logInfo.Message + "\n";
+            result += logInfo.GetRelativeTimeStampAsString() + ": " + logInfo.Severity + ": " + logInfo.Message + "\n";
         }
         return result;
     }
@@ -356,7 +356,7 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
         showMessage = showMessage.Replace(UberLogger.Logger.UnityInternalNewLine, " ");
         if(showTimes)
         {
-            showMessage = log.GetTimeStampAsString() + ": " + showMessage; 
+            showMessage = log.GetRelativeTimeStampAsString() + ": " + showMessage; 
         }
 
         var content = new GUIContent(showMessage, GetIconForLog(log));
