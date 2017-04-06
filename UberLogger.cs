@@ -139,6 +139,7 @@ namespace UberLogger
         public LogSeverity Severity;
         public string Message;
         public List<LogStackFrame> Callstack;
+        public LogStackFrame OriginatingSourceLocation;
         public double RelativeTimeStamp;
         string RelativeTimeStampAsString;
         public DateTime AbsoluteTimeStamp;
@@ -154,12 +155,13 @@ namespace UberLogger
             return AbsoluteTimeStampAsString;
         }
 
-        public LogInfo(UnityEngine.Object source, string channel, LogSeverity severity, List<LogStackFrame> callstack, object message, params object[] par)
+        public LogInfo(UnityEngine.Object source, string channel, LogSeverity severity, List<LogStackFrame> callstack, LogStackFrame originatingSourceLocation, object message, params object[] par)
         {
             Source = source;
             Channel = channel;
             Severity = severity;
             Message = "";
+            OriginatingSourceLocation = originatingSourceLocation;
 
             var messageString = message as String;
             if(messageString!=null)
@@ -382,13 +384,15 @@ namespace UberLogger
         /// Returns false if the stack frame contains any methods flagged as LogUnityOnly
         /// </summary>
         [StackTraceIgnore]
-        static bool GetCallstack(ref List<LogStackFrame> callstack)
+        static bool GetCallstack(ref List<LogStackFrame> callstack, out LogStackFrame originatingSourceLocation)
         {
             callstack.Clear();
             StackTrace stackTrace = new StackTrace(true);           // get call stack
             StackFrame[] stackFrames = stackTrace.GetFrames();  // get method calls (frames)
 
             bool encounteredIgnoredMethodPreviously = false;
+
+            originatingSourceLocation = null;
 
             // Iterate backwards over stackframes; this enables us to show the "first" ignored Unity method if need be, but hide subsequent ones
             for (int i = stackFrames.Length - 1; i >= 0; i--)
@@ -403,6 +407,8 @@ namespace UberLogger
                 if(!method.IsDefined(typeof(StackTraceIgnore), true))
                 {
                     IgnoredUnityMethod.Mode showHideMode = ShowOrHideMethod(method);
+
+                    bool setOriginatingSourceLocation = (showHideMode == IgnoredUnityMethod.Mode.Show && originatingSourceLocation == null);
 
                     if (showHideMode == IgnoredUnityMethod.Mode.ShowIfFirstIgnoredMethod)
                     {
@@ -421,6 +427,9 @@ namespace UberLogger
                         var logStackFrame = new LogStackFrame(stackFrame);
                         
                         callstack.Add(logStackFrame);
+
+                        if (setOriginatingSourceLocation)
+                            originatingSourceLocation = logStackFrame;
                     }
                 }
             }
@@ -435,7 +444,7 @@ namespace UberLogger
         /// Converts a Unity callstack string into a list of UberLogger's LogStackFrame
         /// Doesn't do any filtering, since this should only be dealing with internal Unity errors rather than client code
         /// </summary>
-        static List<LogStackFrame> GetCallstackFromUnityLog(string unityCallstack)
+        static List<LogStackFrame> GetCallstackFromUnityLog(string unityCallstack, out LogStackFrame originatingSourceLocation)
         {
             var lines = System.Text.RegularExpressions.Regex.Split(unityCallstack, UberLogger.Logger.UnityInternalNewLine);
 
@@ -448,6 +457,12 @@ namespace UberLogger
                     stack.Add(new LogStackFrame(line));
                 }
             }
+
+            if (stack.Count > 0)
+                originatingSourceLocation = stack[0];
+            else
+                originatingSourceLocation = null;
+
             return stack;
         }
 
@@ -469,7 +484,8 @@ namespace UberLogger
                         AlreadyLogging = true;
                     
                         var callstack = new List<LogStackFrame>();
-                        var unityOnly = GetCallstack(ref callstack);
+                        LogStackFrame originatingSourceLocation;
+                        var unityOnly = GetCallstack(ref callstack, out originatingSourceLocation);
                         if(unityOnly)
                         {
                             return;
@@ -478,7 +494,7 @@ namespace UberLogger
                         //If we have no useful callstack, fall back to parsing Unity's callstack 
                         if(callstack.Count==0)
                         {
-                            callstack = GetCallstackFromUnityLog(unityCallStack);
+                            callstack = GetCallstackFromUnityLog(unityCallStack, out originatingSourceLocation);
                         }
 
                         LogSeverity severity;
@@ -500,7 +516,7 @@ namespace UberLogger
                             callstack.Insert(0, new LogStackFrame(unityMessage, filename, lineNumber));
                         }
 
-                        var logInfo = new LogInfo(null, "", severity, callstack, unityMessage);
+                        var logInfo = new LogInfo(null, "", severity, callstack, originatingSourceLocation, unityMessage);
 
                         //Add this message to our history
                         RecentMessages.AddLast(logInfo);
@@ -536,13 +552,14 @@ namespace UberLogger
                     {
                         AlreadyLogging = true;
                         var callstack = new List<LogStackFrame>();
-                        var unityOnly = GetCallstack(ref callstack);
+                        LogStackFrame originatingSourceLocation;
+                        var unityOnly = GetCallstack(ref callstack, out originatingSourceLocation);
                         if(unityOnly)
                         {
                             return;
                         }
 
-                        var logInfo = new LogInfo(source, channel, severity, callstack, message, par);
+                        var logInfo = new LogInfo(source, channel, severity, callstack, originatingSourceLocation, message, par);
 
                         //Add this message to our history
                         RecentMessages.AddLast(logInfo);
