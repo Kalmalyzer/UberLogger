@@ -108,7 +108,7 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
             for (int c1 = 0; c1 < log.Callstack.Count; c1++)
             {
                 var frame = log.Callstack[c1];
-                var methodName = frame.GetFormattedMethodName();
+                var methodName = frame.GetFormattedMethodNameWithFileName();
                 result += methodName + "\n";
             }
         }
@@ -583,7 +583,7 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
             for(int c1=0; c1<log.Callstack.Count; c1++)
             {
                 var frame = log.Callstack[c1];
-                var methodName = frame.GetFormattedMethodName();
+                var methodName = frame.GetFormattedMethodNameWithFileName();
                 if(!String.IsNullOrEmpty(methodName))
                 {
                     var content = new GUIContent(methodName);
