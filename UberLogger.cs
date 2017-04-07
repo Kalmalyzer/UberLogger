@@ -408,7 +408,7 @@ namespace UberLogger
                 {
                     IgnoredUnityMethod.Mode showHideMode = ShowOrHideMethod(method);
 
-                    bool setOriginatingSourceLocation = (showHideMode == IgnoredUnityMethod.Mode.Show && originatingSourceLocation == null);
+                    bool setOriginatingSourceLocation = (showHideMode == IgnoredUnityMethod.Mode.Show);
 
                     if (showHideMode == IgnoredUnityMethod.Mode.ShowIfFirstIgnoredMethod)
                     {
