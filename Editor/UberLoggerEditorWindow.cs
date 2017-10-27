@@ -118,10 +118,18 @@ public class UberLoggerEditorWindow : EditorWindow, UberLoggerEditor.ILoggerWind
 
     public void HandleCopyToClipboard()
     {
+        const string copyCommandName = "Copy";
+
         Event e = Event.current;
-        // Shift-C triggers copy to clipboard
-        // It would be preferable to use Ctrl-C, but Unity does not pass Ctrl-C on as events
-        if (e.type == EventType.KeyDown && e.character == 'C' && e.modifiers == EventModifiers.Shift)
+        if (e.type == EventType.ValidateCommand && e.commandName == copyCommandName)
+        {
+            // Respond to "Copy" command
+
+            // Confirm that we will consume the command; this will result in the command being re-issued with type == EventType.ExecuteCommand
+			// Reference: https://docs.unity3d.com/ScriptReference/EventType.ValidateCommand.html
+            e.Use();
+        }
+        else if (e.type == EventType.ExecuteCommand && e.commandName == copyCommandName)
         {
             // Copy current message log and current stack to the clipboard
             // It would be preferable to only copy one of the two, but that requires UberLogger to have focus handling
